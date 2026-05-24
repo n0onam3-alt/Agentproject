@@ -26,6 +26,9 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.07);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'cv02';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .topbar-pill {
   flex: 1 1 0; min-width: 0;
@@ -76,6 +79,14 @@
   color: #18171A;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  display: inline-block;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.topbar-pill-count.pop { animation: topbar-count-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes topbar-count-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
 }
 .topbar-water-wrap {
   flex: 1 1 0; min-width: 0;
@@ -111,6 +122,19 @@
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, transform 0.10s, box-shadow 0.15s;
   box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.topbar-water-add::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 70%);
+  transform: translateX(-110%);
+  pointer-events: none;
 }
 .topbar-water-add:hover {
   background: linear-gradient(180deg, #38bdf8, #0ea5e9);
@@ -120,6 +144,12 @@
 .topbar-water-add.flash {
   background: linear-gradient(180deg, #7dd3fc, #38bdf8);
   box-shadow: 0 4px 20px rgba(14, 165, 233, 0.65);
+}
+.topbar-water-add.flash::after {
+  animation: topbar-shine 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes topbar-shine {
+  to { transform: translateX(110%); }
 }
 
 @media (max-width: 480px) {
@@ -292,12 +322,19 @@ body.topbar-modal-open {
     const s = getStackProgress();
     const w = getWaterProgress();
 
-    document.getElementById('topbarGoalsCount').textContent =
-      g.total ? g.done + '/' + g.total : '0/0';
-    document.getElementById('topbarStackCount').textContent =
-      s.total ? s.done + '/' + s.total : '0/0';
-    document.getElementById('topbarWaterCount').textContent =
-      w.total ? w.done + '/' + w.total : '0/0';
+    function setCount(id, txt) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.textContent !== txt && el.textContent !== '—/—') {
+        el.classList.remove('pop');
+        void el.offsetWidth;
+        el.classList.add('pop');
+      }
+      el.textContent = txt;
+    }
+    setCount('topbarGoalsCount', g.total ? g.done + '/' + g.total : '0/0');
+    setCount('topbarStackCount', s.total ? s.done + '/' + s.total : '0/0');
+    setCount('topbarWaterCount', w.total ? w.done + '/' + w.total : '0/0');
 
     setPillStatus(goalsEl, classifyStatus(g.done, g.total));
     setPillStatus(stackEl, classifyStatus(s.done, s.total));
