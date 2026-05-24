@@ -994,7 +994,7 @@ input::placeholder { color: #AAA8A4 !important; }
     const target = Math.ceil(computeTargetMl().total / unitVolMl());
     // Last 7 days
     const days = [];
-    for (let i = 6; i >= 1; i--) {
+    for (let i = 7; i >= 1; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const k = dateKey(d);
@@ -1002,7 +1002,7 @@ input::placeholder { color: #AAA8A4 !important; }
       days.push({ date: d, key: k, count: n });
     }
     list.innerHTML = days.map(({date, count}) => {
-      const dows = ['Sun','Mon','Tue','Wed','THU','Fri','Sat'];
+      const dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       const lbl = dows[date.getDay()] + ' ' + (date.getMonth()+1) + '/' + date.getDate();
       const pct = Math.min(100, (count / target) * 100);
       const cls = (count >= target) ? '' : 'miss';
