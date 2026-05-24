@@ -88,6 +88,13 @@
   40%  { transform: scale(1.18); }
   100% { transform: scale(1); }
 }
+@media (prefers-reduced-motion: reduce) {
+  .topbar-pill-count.pop,
+  .topbar-water-add.shine::after,
+  .topbar-water-ripple,
+  .topbar-pill.miss .topbar-pill-dot { animation: none !important; }
+  .topbar-pill, .topbar-water-add { transition: none !important; }
+}
 .topbar-water-wrap {
   flex: 1 1 0; min-width: 0;
   display: flex;
@@ -135,6 +142,7 @@
     transparent 70%);
   transform: translateX(-110%);
   pointer-events: none;
+  z-index: -1;
 }
 .topbar-water-add:hover {
   background: linear-gradient(180deg, #38bdf8, #0ea5e9);
@@ -145,11 +153,27 @@
   background: linear-gradient(180deg, #7dd3fc, #38bdf8);
   box-shadow: 0 4px 20px rgba(14, 165, 233, 0.65);
 }
-.topbar-water-add.flash::after {
+.topbar-water-add.shine::after {
   animation: topbar-shine 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes topbar-shine {
   to { transform: translateX(110%); }
+}
+/* Water-drop ripple emitted on click, rides outside the button */
+.topbar-water-ripple {
+  position: fixed;
+  border-radius: 50%;
+  border: 2px solid rgba(14, 165, 233, 0.65);
+  background: radial-gradient(circle, rgba(14,165,233,0.18), transparent 65%);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.9;
+  animation: topbar-ripple 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 41;
+}
+@keyframes topbar-ripple {
+  from { transform: translate(-50%, -50%) scale(0);   opacity: 0.85; }
+  to   { transform: translate(-50%, -50%) scale(4.2); opacity: 0; }
 }
 
 @media (max-width: 480px) {
@@ -376,10 +400,27 @@ body.topbar-modal-open {
     const btn = document.getElementById('topbarWaterAdd');
     if (btn) {
       btn.classList.add('flash');
+      btn.classList.add('shine');
       setTimeout(() => btn.classList.remove('flash'), 220);
+      setTimeout(() => btn.classList.remove('shine'), 600);
+      emitWaterRipple(btn);
     }
 
     pushWaterToNetlify(state);
+  }
+
+  function emitWaterRipple(btn) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'topbar-water-ripple';
+    const size = Math.max(rect.width, rect.height);
+    ripple.style.width = size + 'px';
+    ripple.style.height = size + 'px';
+    ripple.style.left = (rect.left + rect.width / 2) + 'px';
+    ripple.style.top = (rect.top + rect.height / 2) + 'px';
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 750);
   }
 
   // -------- Mobile lockdown helpers --------

@@ -160,6 +160,9 @@ html, body {
   40%  { transform: scale(1.14); }
   100% { transform: scale(1); }
 }
+@media (prefers-reduced-motion: reduce) {
+  .water-num.pop, .water-bar-fill { animation: none !important; transition: none !important; }
+}
 .water-target {
   font-size: 18px; color: var(--text-3); font-weight: 500;
 }
