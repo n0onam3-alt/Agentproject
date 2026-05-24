@@ -239,6 +239,7 @@ body::before {
   margin-bottom: 14px;
   transition: background 0.4s, border-color 0.4s, transform 0.22s ease, box-shadow 0.22s ease;
   will-change: transform;
+  position: relative;
 }
 .gm-card:hover {
   transform: translateY(-2px);
@@ -279,6 +280,15 @@ body::before {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.12); }
   100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gm-progress-num.pop,
+  .goal-ticker-row.is-leaving,
+  .goal-ticker-row.is-entering,
+  .goal-ticker-led-dot,
+  .gm-streak.gm-streak-active,
+  .day-ring-section, .ticker-row, .section { animation: none !important; }
+  body::before { animation: none !important; }
 }
 .gm-progress-total {
   font-family: var(--mono); font-size: 22px;
@@ -560,6 +570,38 @@ body::before {
 /* ─── Progress bar glow ───────────────────────────────────── */
 .gm-bar-seg-done {
   box-shadow: 0 0 8px rgba(5,150,105,0.4), 0 0 2px rgba(5,150,105,0.6);
+}
+
+/* ─── All-done celebration ────────────────────────────────── */
+.gm-card.celebrate {
+  animation: card-celebrate 1.1s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes card-celebrate {
+  0%   { box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 0 rgba(5,150,105,0.35); }
+  35%  { box-shadow: 0 6px 22px rgba(5,150,105,0.18), 0 0 0 14px rgba(5,150,105,0.10); }
+  100% { box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 28px rgba(5,150,105,0); }
+}
+.celebrate-sparkles {
+  position: absolute; inset: 0;
+  pointer-events: none; overflow: hidden;
+  border-radius: var(--r);
+}
+.celebrate-sparkles span {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--green) 0%, rgba(5,150,105,0) 70%);
+  opacity: 0;
+  animation: sparkle-burst 1s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes sparkle-burst {
+  0%   { transform: translate(0,0) scale(0.4); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: var(--end, translate(0,-60px)) scale(1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gm-card.celebrate, .celebrate-sparkles span { animation: none !important; }
+  .celebrate-sparkles { display: none; }
 }
 
 /* ─── Fade-in entrance ────────────────────────────────────── */
@@ -880,6 +922,32 @@ function tick() {
 }
 window.addEventListener('goals-changed', ()=>{ cycleIdx=0; tick(); });
 
+// Celebration burst when the user crosses into all-done.
+// Fires once per transition (caller guards on previous state).
+function celebrateAllDone(card) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  card.classList.remove('celebrate');
+  void card.offsetWidth;
+  card.classList.add('celebrate');
+  const sparkles = document.createElement('div');
+  sparkles.className = 'celebrate-sparkles';
+  for (let i = 0; i < 14; i++) {
+    const s = document.createElement('span');
+    // Start from a point on the card top edge, fan outward + upward.
+    const startX = 20 + Math.random() * 60;        // 20–80% across
+    const dx = (Math.random() - 0.5) * 220;         // -110…110 px
+    const dy = -60 - Math.random() * 80;            // -60…-140 px
+    s.style.left = startX + '%';
+    s.style.top  = '40%';
+    s.style.animationDelay = (Math.random() * 0.15) + 's';
+    s.style.setProperty('--end', `translate(${dx.toFixed(0)}px, ${dy.toFixed(0)}px)`);
+    sparkles.appendChild(s);
+  }
+  card.appendChild(sparkles);
+  setTimeout(() => sparkles.remove(), 1300);
+  setTimeout(() => card.classList.remove('celebrate'), 1200);
+}
+
 // Render helpers
 function renderTodayHeader() {
   const goals = storeGet('goals:'+getActiveDateString()) || [];
@@ -908,7 +976,10 @@ function renderTodayHeader() {
   if (pctEl) pctEl.textContent = total > 0 ? Math.round(done/total*100)+'%' : '—';
   // card state
   const card = document.getElementById('todayCard');
-  total>0 && done===total ? card.classList.add('gm-all-done') : card.classList.remove('gm-all-done');
+  const allDone = total>0 && done===total;
+  allDone ? card.classList.add('gm-all-done') : card.classList.remove('gm-all-done');
+  if (allDone && renderTodayHeader._wasAllDone === false) celebrateAllDone(card);
+  renderTodayHeader._wasAllDone = allDone;
   document.getElementById('gmPushBtn').style.display = goals.some(g=>!g.done) ? 'block' : 'none';
 }
 function renderStreak() {
