@@ -80,6 +80,10 @@ html, body {
   color: var(--text-1);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'cv02';
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
 }
 .shell { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
@@ -147,6 +151,14 @@ html, body {
 .water-num {
   font-size: 56px; font-weight: 700; letter-spacing: -0.03em;
   line-height: 1; font-variant-numeric: tabular-nums;
+  display: inline-block;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.water-num.pop { animation: water-num-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes water-num-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
 }
 .water-target {
   font-size: 18px; color: var(--text-3); font-weight: 500;
@@ -938,7 +950,14 @@ input::placeholder { color: #AAA8A4 !important; }
     const unitName = unitLabelPlural();
 
     $('waterUnitLabel').textContent = unitName.toUpperCase() + ' DRANK TODAY';
-    $('waterNum').textContent = count;
+    const numEl = $('waterNum');
+    const prev = parseInt(numEl.textContent, 10);
+    numEl.textContent = count;
+    if (!isNaN(prev) && prev !== count) {
+      numEl.classList.remove('pop');
+      void numEl.offsetWidth;
+      numEl.classList.add('pop');
+    }
     $('waterTarget').textContent = '/ ' + targetUnits;
     $('waterPlusLabel').textContent = 'Drank a ' + unitLabelSingular();
 

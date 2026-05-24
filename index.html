@@ -42,6 +42,10 @@ body {
   position: relative;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'cv02';
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
 }
 
 body::before {
@@ -266,7 +270,15 @@ body::before {
   font-size: 64px; font-weight: 800;
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
-  line-height: 1; transition: color 0.35s;
+  line-height: 1;
+  transition: color 0.35s, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
+}
+.gm-progress-num.pop { animation: num-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes num-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
 }
 .gm-progress-total {
   font-family: var(--mono); font-size: 22px;
@@ -872,7 +884,14 @@ window.addEventListener('goals-changed', ()=>{ cycleIdx=0; tick(); });
 function renderTodayHeader() {
   const goals = storeGet('goals:'+getActiveDateString()) || [];
   const total = goals.length, done = goals.filter(g=>g.done).length;
-  document.getElementById('gmProgressNum').textContent = done;
+  const numEl = document.getElementById('gmProgressNum');
+  const prev = parseInt(numEl.textContent, 10);
+  numEl.textContent = done;
+  if (!isNaN(prev) && prev !== done) {
+    numEl.classList.remove('pop');
+    void numEl.offsetWidth;
+    numEl.classList.add('pop');
+  }
   document.getElementById('gmProgressTotal').textContent = `/ ${total}`;
   let lbl = total===0 ? 'goals' : (done===total && total>0) ? 'all done 🎉' : 'complete';
   document.getElementById('gmProgressLabel').textContent = lbl;
